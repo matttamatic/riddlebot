@@ -1,0 +1,26 @@
+{
+  "name": "riddlewot-mastodon-bot",
+  "version": "1.0.0",
+  "description": "mastodonbot generating from riddlewot",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "author": "byronhulcher",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "node-persist": "2.1.0",
+    "mastodon": "^1.2.2",
+    "string-template": "^1.0.0",
+    "scrape-it": "^5.0.5",
+    "twit": "^2.2.9"
+  },
+  "engines": {
+    "node": "6.9.x"
+  },
+  "repository": {
+    "type": "glitch",
+    "url": "https://glitch.com/edit/#!/tasty-client"
+  }
+}
