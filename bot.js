@@ -66,11 +66,11 @@ function forceIntoCache(fpRiddleId,fpRiddleText) {
 }
 
 function getRiddlesFromList(response) {
-    console.log("Scraping RW");
-  scrapeIt('https://www.riddlewot.com/riddles',
-           {
+  console.log("Scraping RW");
+  scrapeIt('https://www.riddlewot.com/riddles?p=1',
+   {
     riddles: {
-      listItem: 'div.riddles',
+      listItem: 'div.riddles blockquote',
       name: "riddles",
       data: {
         title: "a",
@@ -83,23 +83,32 @@ function getRiddlesFromList(response) {
     }
   })
   .then(({data}) => {
-      console.log("Scraped riddle List: ");
+      //console.log("Scraped riddle List data: ");
+      //console.log(data); 
+     
       for(var i = 0; i < data.riddles.length; i++){
-        console.log(data.riddles[i]);
+        //console.log(data.riddles[i]);
+        if(data.riddles[i].title.endsWith('...')){
+          refreshCacheForRiddle(data.riddles[i].riddleId);
+          //console.log("Partial riddle " + (data.riddles[i].riddleId) );
+        }else if (data.riddles[i].riddleId !== '' ){
+          // console.log("Found riddle " + data.riddles[i].riddleId, data.riddles[i].title);
+          forceIntoCache(data.riddles[i].riddleId, data.riddles[i].title);
+        }
       }
-      // for(var i = 0; i < data.length; i++){
-      //   refreshCacheForRiddle(data[i]);
-      // }
+      response.send(data.riddles);
+
   });
 }
 
 function refreshCacheForRiddle(riddleId){
   var riddleArchive = storage.getItemSync('riddleArchive');
+  //console.log('URL ' + "https://www.riddlewot.com/riddles/"+riddleId );
   scrapeIt("https://www.riddlewot.com/riddles/"+riddleId, 
-       {text: {selector: 'blockquote.nk-blockquote', convert: x => {return x.replace('\n','').replace(/\r\n/g,'\n')} }})
+           {text: {selector: 'blockquote.nk-blockquote', convert: x => {return x.replace('\n','').replace(/\r\n/g,'\n')} }})
     .then(({ data }) => {
-      console.log("Scraped response: ");
-      console.log(data);
+      // console.log("Scraped response: ");
+      // console.log(data);
       var riddleIndex = riddleArchive.findIndex(x => {return x.riddleId === riddleId; });
       if(riddleIndex >= 0){
         riddleArchive[riddleIndex] = {riddleId: riddleId, text: data.text};
@@ -219,12 +228,18 @@ app.all("/riddle", function (request, response) {
 
 app.all("/toot", function (request, response) { // send a GET or POST to /toot to trigger a toot http://expressjs.com/en/starter/basic-routing.html
   console.log("Fire toot!");
-  //getRiddlesFromList(response);
+  var now = Date.now(), // time since epoch in millisecond
+      lastScrape = storage.getItemSync("lastScrape") || 0, // last time we were run in milliseconds
+      scrapeDelay = process.env.SCRAPE_DELAY_IN_MINUTES || 60;// time to delay between tweets in minutes
+  
+  if (now - lastScrape <= (1000 * 60 * scrapeDelay)) { 
+    // Only scrape every process.env.SCRAPE_DELAY_IN_MINUTES or 60 minutes
+    getRiddlesFromList(response);
+  }
   //checkRW(response);
   
   findRandomRiddle(response);
 
-  
 });
 
 app.all("/allriddles", function (request, response) { // send a GET or POST to /toot to trigger a toot http://expressjs.com/en/starter/basic-routing.html
