@@ -19,7 +19,7 @@ function checkRW(response) {
   scrapeIt("https://www.riddlewot.com/", 
            {fpRiddleText: {
              selector: 'blockquote.nk-blockquote',
-             convert: x => {return x.substring(1).replace('\n','').replace(/\r\n/g,'\n')}
+             convert: x => {return x.replace('\n','').replace(/\r\n/g,'\n')}
            }, 
             fpRiddleId: {
               selector: 'button.report',
@@ -65,6 +65,52 @@ function forceIntoCache(fpRiddleId,fpRiddleText) {
   
 }
 
+function getRiddlesFromList(response) {
+    console.log("Scraping RW");
+  scrapeIt('https://www.riddlewot.com/riddles',
+           {
+    riddles: {
+      listItem: 'div.riddles',
+      name: "riddles",
+      data: {
+        title: "a",
+        riddleId: {
+          selector: "a",
+          attr: 'href',
+          convert: x => { return x.substr(x.lastIndexOf('/') + 1); }
+        }
+      }
+    }
+  })
+  .then(({data}) => {
+      console.log("Scraped riddle List: ");
+      for(var i = 0; i < data.riddles.length; i++){
+        console.log(data.riddles[i]);
+      }
+      // for(var i = 0; i < data.length; i++){
+      //   refreshCacheForRiddle(data[i]);
+      // }
+  });
+}
+
+function refreshCacheForRiddle(riddleId){
+  var riddleArchive = storage.getItemSync('riddleArchive');
+  scrapeIt("https://www.riddlewot.com/riddles/"+riddleId, 
+       {text: {selector: 'blockquote.nk-blockquote', convert: x => {return x.replace('\n','').replace(/\r\n/g,'\n')} }})
+    .then(({ data }) => {
+      console.log("Scraped response: ");
+      console.log(data);
+      var riddleIndex = riddleArchive.findIndex(x => {return x.riddleId === riddleId; });
+      if(riddleIndex >= 0){
+        riddleArchive[riddleIndex] = {riddleId: riddleId, text: data.text};
+      }else{
+        riddleArchive.push({riddleId: riddleId, text: data.text});
+      }
+      storage.setItemSync('riddleArchive',riddleArchive);
+      });
+
+}
+
 function findRandomRiddle(response){
   console.log('Picking a random old riddle');
   var useEasyRiddle = !storage.getItemSync('isLastRiddleEasy');
@@ -75,7 +121,7 @@ function findRandomRiddle(response){
     //Text is trimmed by rw or was fetched while the bot was buggy, lets get the full thing and save it in the archive
     // console.log("Trying to reget idx: " + riddleIndex + " riddleId: " + riddle.riddleId + " text: " + riddle.text); 
     scrapeIt("https://www.riddlewot.com/riddles/"+riddle.riddleId, 
-           {text: {selector: 'blockquote.nk-blockquote', convert: x => {return x.substring(1).replace('\n','').replace(/\r\n/g,'\n')} }})
+           {text: {selector: 'blockquote.nk-blockquote', convert: x => {return x.replace('\n','').replace(/\r\n/g,'\n')} }})
     .then(({ data }) => {
       console.log("Scraped response: ");
       console.log(data);
@@ -144,7 +190,7 @@ function cachedToot(){
 // });
 
 
-app.all("/riddle", function (request, response) { // send a GET or POST to /toot to trigger a toot http://expressjs.com/en/starter/basic-routing.html
+app.all("/riddle", function (request, response) { 
   var useEasyRiddle = !storage.getItemSync('isLastRiddleEasy');
   var riddleArchive = useEasyRiddle ? storage.getItemSync('easyRiddleArchive') : storage.getItemSync('riddleArchive');
   var riddleIndex = Math.floor(Math.random() * (riddleArchive.length)); 
@@ -172,9 +218,11 @@ app.all("/riddle", function (request, response) { // send a GET or POST to /toot
 });
 
 app.all("/toot", function (request, response) { // send a GET or POST to /toot to trigger a toot http://expressjs.com/en/starter/basic-routing.html
-  console.log("Fire!");
-
-  checkRW(response);
+  console.log("Fire toot!");
+  //getRiddlesFromList(response);
+  //checkRW(response);
+  
+  findRandomRiddle(response);
 
   
 });
@@ -183,6 +231,9 @@ app.all("/allriddles", function (request, response) { // send a GET or POST to /
   response.status(200).json(storage.getItemSync('easyRiddleArchive').concat(storage.getItemSync('riddleArchive')));
 });
 
+app.all("/recache/:riddleId", function (request, response) { 
+  refreshCacheForRiddle(request.params.riddleId);
+});
 
 //    app.all("/oops", function (request, response) { // send a GET or POST to /toot to trigger a toot http://expressjs.com/en/starter/basic-routing.html
 //     forceIntoCache('u8ZoEN1Qrj','With feet fixed, I grow in breezy climates and can be seen for miles.  I used to turn to feed you, but now I turn to feed your need for power.');

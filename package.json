@@ -9,12 +9,12 @@
   "author": "byronhulcher",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.3",
+    "express": "^4.16.4",
     "node-persist": "2.1.0",
-    "mastodon": "^1.2.2",
-    "string-template": "^1.0.0",
-    "scrape-it": "^5.0.5",
-    "twit": "^2.2.9"
+    "mastodon": "1.2.2",
+    "string-template": "1.0.0",
+    "scrape-it": "^5.1.4",
+    "twit": "2.2.11"
   },
   "engines": {
     "node": "6.9.x"
