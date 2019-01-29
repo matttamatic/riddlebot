@@ -26,17 +26,17 @@ try {
   });
   console.log("Ready to tweet!");
 } catch(err) {
-  console.error(err);
+  // console.error(err);
   console.error("Sorry, your .env file does not have the correct settings in order to tweet");
 }
 
 function postToot(status,spoiler_text){
-  if(process.env.ENABLE_TWITTER){
-    console.log("Tweeting!");
-    twit.post('statuses/update', { status: status }, function(err, data, response) {
-      console.log(data);
-    });
-  }
+  // if(process.env.ENABLE_TWITTER){
+  //   console.log("Tweeting!");
+  //   twit.post('statuses/update', { status: status }, function(err, data, response) {
+  //     console.log(data);
+  //   });
+  // }
   if(process.env.ENABLE_MASTODON){
      console.log("Tooting!");
      if(typeof(spoiler_text) != 'undefined' && spoiler_text != null){

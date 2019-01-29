@@ -6,8 +6,13 @@
     ]
   },
   "restart": {
+    "exclude": [
+      "^public/",
+      "^dist/"
+    ],
     "include": [
-      "^.trigger-rebuild$"
+      "\\.js$",
+      "\\.trigger-rebuild"
     ]
   },
   "throttle": 1000
